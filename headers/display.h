@@ -19,56 +19,60 @@ struct Window;
 #define NULL_RUNNERS \
     (struct Runners) {}
 
+#define BASIC_CANVAS WS_POPUP | WS_SYSMENU
+
+// key press check - https://learn.microsoft.com/en-us/windows/win32/inputdev/virtual-key-codes
+#define IS_KEY_PRESSED(keycode) (GetKeyState(keycode) & 0x8000)
+#define IS_KEY_UP(keycode) (!IS_KEY_PRESSED(keycode))
+
+// Constants
+
+// window states
+#define BIRTHED 0x1000 // existence checkmark
+#define PAUSED 0x0100  // window's event loop is paused
+#define CLOSED 0x0010  // window is closed
+#define KILLED 0x0001  // window is dead, pending deletion
+
 // type definitions
-typedef void (*Handler)(struct Window *window); // custom message handler
-typedef void (*Updater)(struct Window *, MSG);
+typedef void (*Handler)(struct Window *window, LPARAM lParam, WPARAM hParam); // custom message handler
+typedef void (*Updater)(struct Window *);
 
 // struct definitions
 
 // inspired from https://processing.org/reference#input
-// I could have global variables but it's better to just pass through the window pointer so that I can easily have multiple windows + multithreading in the future
 struct Runners
 {
-    Handler windowDestroyed; // window closed
+    // event handlers
+    void (*canvasInitialised)(struct Window *); // initial set up
+    void (*canvasDestroyed)(struct Window *);   // window closed
 
     Handler windowModalLoop; // when the user enters/exist modal loop
     Handler windowMoved;     // window has been moved
 
-    Handler windowActivated; // when the user focusses on window (tab-alt, mouse click etc)
+    Handler windowActivated;    // when the user focusses on window (tab-alt, mouse click etc)
+    Handler windowChangePrelim; // run when the user wants to change (resize/move) the window - use can change MINMAXINFO struct to whatever
 
-    int (*windowResized)(struct Window *window, int newWidth, int newHeight); // window has been resized - return 1 to override default behaviour (i.e., mapping buffer to new size)
-    void (*windowChangePrelim)(struct Window *window, MINMAXINFO *);          // run when the user wants to change (resize/move) the window - use can change MINMAXINFO struct to whatever
+    int (*windowResized)(struct Window *window, LPARAM lParam, WPARAM hParam); // window has been resized - return 1 to override default behaviour (i.e., mapping buffer to new size)
 
-    // Handler keyDown; // key pressed
-    // Handler keyUp;   // key released
+    // input handlers
+    Handler keyDown; // key pressed
+    Handler keyUp;   // key released
 
-    // Handler mousePressed;  // mouse pressed
-    // Handler mouseReleased; // mouse released
-    // Handler mouseMoved;    // mouse moved over window
-    // Handler mouseWheel;    // mouse wheel scrolled
+    Handler mousePressed;  // mouse pressed
+    Handler mouseReleased; // mouse released
+    Handler mouseMoved;    // mouse moved over window
+    Handler mouseWheel;    // mouse wheel scrolled
 };
 
-// I can't be assed dealing with any more win api functions so I'll just keep these here
-// because abstraction is inevitable - so it's either this or I write a wrapper function over the winapi for each function
-struct States
+struct Hotkeys
 {
-    BOOL modalLoop;
-    BOOL resizing;
-    BOOL moving;
-
-    BOOL active;
-
-    BOOL maximised;
-    BOOL minimised;
+    int number;
+    void (*hotkeyCallbacks[])(struct Window *);
 };
 
 struct Window
 {
-    struct
-    {
-        int x;
-        int y;
-    } position;
+    uint32_t *pixels;
 
     struct
     {
@@ -76,33 +80,50 @@ struct Window
         int height;
     } size; // {x, y}
 
-    uint32_t *pixels;
+    POINT position;
+
+    int state;
+
     int frameRate;
+    DWORD style;
+    char *title;
 
     Updater updateLoop; // can't use type def here because it has this struct in its definition!
     struct Runners runners;
-    struct States states;
+    struct Hotkeys *hotkeys;
 
     HWND windowHandler;
     HDC windowDC;
-    WNDCLASSEX windowClass;
+    WNDCLASSEX *windowClass;
     BITMAPINFO bitmapInfo;
 
-    int checkmark;  // verify it exists
     void *settings; // additional data to be lobbed about
+
+    struct Window *prevWindow; // previous window in the linked list
+    struct Window *nextWindow; // next window
 };
 
 // function declarations
-struct Window *InitialisePixels(int width, int height, char *title, int frameRate, Updater updateLoop, struct Runners runners); // creates a new screen
 
-int UpdateBuffer(struct Window *window, int newWidth, int newHeight); // remaps the old buffer to the new one, preserving as much information as possible
+// Primary functions
+struct Window *CreateCanvas(int width, int height, int style, char *title, int frameRate, Updater updateLoop, struct Runners runners, struct Window *windowList);
+int KindlyBegin(struct Window *window); // CPR
 
-int Start(struct Window *window); // starts the window's event loop - blocks until the window is closed
-int Stop(struct Window *window);  // destroys the window
+// Linked list traversal functions
+struct Window *GetHead(struct Window *window);
+struct Window *GetTail(struct Window *window);
+
+void DestroyCanvas(struct Window *window); // completely destroyes window struct - pauses event loop, frees pixel buffer, closes window and destroys window struct
 
 int PauseLoop(struct Window *window); // resume event loop timer
 int StartLoop(struct Window *window); // pause event loop timer
 
-LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam); // just so I can have the main handler in a separate file
+int UpdateBuffer(struct Window *window, int newWidth, int newHeight); // remaps the old buffer to the new one, preserving as much information as possible
+
+void LogMessage(char *error);
+
+// just so I can have the main handler in a separate file
+VOID CALLBACK UpdateTimerProc(HWND hwnd, UINT uMsg, UINT_PTR idEvent, DWORD dwTime);
+LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam);
 
 #endif

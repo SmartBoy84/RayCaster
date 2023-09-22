@@ -1,16 +1,7 @@
 #include "display.h"
 #include "synchapi.h"
 
-MSG msg;
 UINT ret;
-
-const char g_szClassName[] = "myWindowClass";
-
-#if RAND_MAX == 32767
-#define Rand32() ((rand() << 16) + (rand() << 1) + (rand() & 1))
-#else
-#define Rand32() rand()
-#endif
 
 void LogMessage(char *error)
 {
@@ -21,6 +12,11 @@ void LogMessage(char *error)
 void LogLastError()
 {
     DWORD error = GetLastError();
+    if (error == 0)
+    {
+        printf("No error message recorded");
+        return;
+    }
     char *errorMsg;
 
     FormatMessage(FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_FROM_SYSTEM, NULL, error, 0, errorMsg, 0, NULL);
@@ -32,6 +28,20 @@ void LogLastError()
     }
     else
         printf("Failed to retrieve the error message");
+}
+
+struct Window *GetHead(struct Window *window)
+{
+    for (; window->prevWindow; window = window->prevWindow)
+        ;
+    return window;
+}
+
+struct Window *GetTail(struct Window *window)
+{
+    for (; window->nextWindow; window = window->nextWindow)
+        ;
+    return window;
 }
 
 int UpdateBuffer(struct Window *window, int newWidth, int newHeight)
@@ -54,7 +64,10 @@ int UpdateBuffer(struct Window *window, int newWidth, int newHeight)
             limitingHeight = newHeight;
 
         for (int y = 0; y <= limitingHeight - 1; y++)
-            memcpy(newPixelBuffer + (newWidth * y), window->pixels + (window->size.width * y), limitingWidth * sizeof(uint32_t)); // try to preserve as much data as possible
+            memcpy(
+                newPixelBuffer + newWidth * y,
+                window->pixels + window->size.width * y,
+                limitingWidth * sizeof(uint32_t)); // try to preserve as much data as possible
     }
 
     free(window->pixels);
@@ -69,16 +82,29 @@ int UpdateBuffer(struct Window *window, int newWidth, int newHeight)
     return 0;
 }
 
-struct Window *InitialisePixels(int width, int height, char *title, int frameRate, Updater updateLoop, struct Runners runners)
+struct Window *CreateCanvas(int width, int height, int style, char *title, int frameRate, Updater updateLoop, struct Runners runners, struct Window *windowList)
 {
-    struct Window *window = calloc(sizeof(struct Window), sizeof(uint8_t)); // FIX ME
-    window->checkmark = 0xDEADBEEF;
+    if (windowList && !(GetHead(windowList)->state & BIRTHED))
+    {
+        LogMessage("Malformed linked list provided");
+        return NULL;
+    }
+
+    struct Window *window = calloc(sizeof(struct Window), sizeof(uint8_t));
+    HINSTANCE moduleHandle = GetModuleHandle(NULL);
+
+    // fill  up the window struct
+    window->state |= (PAUSED | BIRTHED);
+    window->title = title;
 
     window->frameRate = frameRate; // milliseconds - time that should elapse in between frames
+    window->style = style;
+
     window->updateLoop = updateLoop;
     window->runners = runners;
 
-    HINSTANCE moduleHandle = GetModuleHandle(NULL);
+    window->size.width = width;
+    window->size.height = height;
 
     // Initialize BITMAPINFO structure
     window->bitmapInfo = (BITMAPINFO){
@@ -90,113 +116,96 @@ struct Window *InitialisePixels(int width, int height, char *title, int frameRat
         }};
 
     // Initialise window class
-    window->windowClass = (WNDCLASSEX){
-        .cbSize = sizeof(window->windowClass),
-        .style = 0,
-        .cbClsExtra = 0,
-        .cbWndExtra = 0,
-
-        .hIcon = LoadIcon(NULL, IDI_APPLICATION),
-        .hIconSm = LoadIcon(NULL, IDI_APPLICATION),
-        .hCursor = LoadCursor(NULL, IDC_ARROW),
-        .hbrBackground = (HBRUSH)(COLOR_WINDOW + 1),
-
-        .lpszMenuName = NULL,
-        .lpszClassName = g_szClassName,
-
-        .hInstance = moduleHandle,
-        .lpfnWndProc = WndProc};
-
-    if (!RegisterClassExA(&window->windowClass))
+    if (!windowList) // if not given the head, then create a class for this "window clump"
     {
-        LogMessage("Window registration failed");
-        return NULL;
+        WNDCLASSEX *windowClass = calloc(1, sizeof(WNDCLASSEX));
+        windowClass->cbSize = sizeof(WNDCLASSEX);
+
+        windowClass->hIcon = LoadIcon(NULL, IDI_APPLICATION);
+        windowClass->hIconSm = LoadIcon(NULL, IDI_APPLICATION);
+        windowClass->hCursor = LoadCursor(NULL, IDC_ARROW);
+
+        windowClass->hInstance = moduleHandle;
+        windowClass->lpszClassName = window->title;
+
+        windowClass->lpfnWndProc = WndProc;
+
+        if (!RegisterClassExA(windowClass))
+        {
+            LogMessage("Window class registration failed");
+            return windowList;
+        }
+
+        window->windowClass = windowClass;
+    }
+    else
+        window->windowClass = GetHead(windowList)->windowClass; // copy over this clump's class
+
+    // create the window
+    if (windowList)
+    {
+        window->prevWindow = GetTail(windowList);
+        window->prevWindow->nextWindow = window; // pop on to linked list so that event loop starts running this as well
     }
 
-    window->windowHandler = CreateWindowEx(
-        WS_EX_CLIENTEDGE,
-        g_szClassName,
-        title,
-        WS_OVERLAPPEDWINDOW | WS_VISIBLE,
-        CW_USEDEFAULT, CW_USEDEFAULT, width, height,
-        NULL, NULL, moduleHandle, NULL);
+    // center the screen
+    window->position = (POINT){
+        .x = (GetSystemMetrics(SM_CXSCREEN) - window->size.width) / 2,
+        .y = (GetSystemMetrics(SM_CYSCREEN) - window->size.height) / 2,
+    };
+
+    window->windowHandler = CreateWindowA(window->windowClass->lpszClassName,
+                                          window->title,                            // set title
+                                          window->style | WS_VISIBLE,               // set styling
+                                          window->position.x, window->position.y,   // center the screen
+                                          window->size.width, window->size.height,  // set dimensions
+                                          NULL, NULL, GetModuleHandle(NULL), NULL); // other shizzle
+
     if (window->windowHandler == NULL)
     {
         LogMessage("Window creation failed");
-        return NULL;
+        return windowList;
     }
 
     window->windowDC = GetDC(window->windowHandler);
-    UpdateBuffer(window, width, height);
+    UpdateBuffer(window, window->size.width, window->size.height);
     SetWindowLongPtr(window->windowHandler, GWLP_USERDATA, (LONG_PTR)window); // add our window data so we can access it in WinProc
+
+    window->runners.canvasInitialised(window);
+
+    if (StartLoop(window))
+    {
+        LogMessage("[Fatal] failed to start event loop timer");
+        return windowList;
+    }
 
     return window;
 }
 
-VOID CALLBACK UpdateTimerProc(HWND hwnd, UINT uMsg, UINT_PTR idEvent, DWORD dwTime)
+void DestroyCanvas(struct Window *window)
 {
-    struct Window *window = (struct Window *)GetWindowLongPtr(hwnd, GWLP_USERDATA); // retrieve pointer to our window struct from the window's memory
+    if (window->runners.canvasDestroyed)
+        window->runners.canvasDestroyed(window);
 
-    // Run frame updater
-    window->updateLoop(window, msg); // make sure to pass back window pointer to allow user to meddle!
-    InvalidateRect(window->windowHandler, NULL, FALSE);
-    UpdateWindow(window->windowHandler); // update screen's pixel buffer
-}
+    window->state |= KILLED; // lets the event loop know
+    DestroyWindow(window->windowHandler);
 
-int StartLoop(struct Window *window)
-{
-    ret = SetTimer(window->windowHandler, (UINT_PTR)window, 1000 / window->frameRate, (TIMERPROC)UpdateTimerProc); // window ptr is used as id
-    if (ret == 0)
-        return 1;
-
-    return 0;
-}
-
-int PauseLoop(struct Window *window)
-{
-    return KillTimer(window->windowHandler, (UINT_PTR)window);
-}
-
-int Start(struct Window *window)
-{
-    ShowWindow(window->windowHandler, SW_SHOW);
-
-    // Heart of the application
-    if (StartLoop(window))
-    {
-        LogMessage("[Fatal] failed to start event loop timer");
-        return 1;
-    }
-
-    // If the above is the heart then the following is the lymph nodes
-    while (1)
-    {
-        if (!window->checkmark)
-            break;
-
-        if (PeekMessageA(&msg, window->windowHandler, 0, 0, PM_REMOVE) > 0)
-        {
-            TranslateMessage(&msg);
-            DispatchMessage(&msg);
-        }
-
-        Sleep(1); // good practise, I suppose - infinite loops freak me out
-    }
-
-    // release window memory
-    free(window->pixels);
+    // free whatever parts of the window memory we can/should here
     ReleaseDC(window->windowHandler, window->windowDC);
+    free(window->pixels);
 
-    KillTimer(window->windowHandler, (UINT_PTR)window); // remember, window pointer is just used as the ID here
-    free(window);
+    if (window->prevWindow) // if this window isn't the head of the linked list
+    {
+        ((struct Window *)window->prevWindow)->nextWindow = (struct Window *)window->nextWindow; // pop off self pointer
+        free(window);
+    }
+    else // is the head
+    {
+        if (window->nextWindow)                                       // there's another link ahead
+            ((struct Window *)window->nextWindow)->prevWindow = NULL; // pop off self pointer
 
-    if (window->runners.windowDestroyed)
-        window->runners.windowDestroyed(window);
+        UnregisterClass(window->windowClass->lpszClassName, GetModuleHandle(NULL)); // unregister the class
+    }
 
-    return msg.wParam;
-}
-
-int Stop(struct Window *window)
-{
-    return DestroyWindow(window->windowHandler);
+    PostQuitMessage(0); // Finally, signal event loop that canvas has been destroyed
 }
