@@ -3,7 +3,7 @@
 clock_t startTime;
 char fps[256]; // Change fps to a fixed-size array
 
-BOOL grid = FALSE;
+BOOL grid = TRUE;
 Color grid_color = (int[4]){255, 255, 255, 50};
 
 void FPS()
