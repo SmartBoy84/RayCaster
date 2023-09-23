@@ -52,13 +52,13 @@ int RayCallback(int x0, int y0, int x1, int y1)
     int old_index = GET_MAP_INDEX(x0, y0, unit_size);
     int new_index = GET_MAP_INDEX(x1, y1, unit_size);
 
-    if (game_map[new_index])
-    {
-        ray_collisions[collision_counter] = (struct raylission){
-            .point = (POINT){.x = x0, .y = y0},
-            .side = abs(y0 - y1) > abs(x0 - x1) ? TOP_BOTTOM : LEFT_RIGHT};
-        collision_counter++;
-    }
+    // if (game_map[new_index]) // ensure player isn't inside wall
+    // {
+    //     ray_collisions[collision_counter] = (struct raylission){
+    //         .point = (POINT){.x = x0, .y = y0},
+    //         .side = abs(y0 - y1) > abs(x0 - x1) ? TOP_BOTTOM : LEFT_RIGHT};
+    //     collision_counter++;
+    // }
 
     // edge case must be handled because, by nature, the bresenham line algorithm can jump across this gap and seep through two squares
     return (
@@ -105,14 +105,14 @@ void RenderMap(struct Window *window)
         }
     }
 
-    for (float i = phase_shift; i <= phase_shift + two_pi * FOV; i += two_pi / lines)
+    for (float i = phase_shift - pi * FOV; i <= phase_shift + pi * FOV; i += two_pi / lines)
         DrawLine(window, actual_player_pos[0], actual_player_pos[1], actual_player_pos[0] + render_distance * cos(i) * cross_length, actual_player_pos[1] + render_distance * sin(i) * cross_length, 1, grid ? TRANSPARENT_COLOR : ray_color, RayCallback);
 
     for (int y = 0; y < MAP_HEIGHT; y++)
         for (int x = 0; x < MAP_WIDTH; x++)
             DrawRect(window, x * unit_size, y * unit_size, unit_size, unit_size, game_map[(y * MAP_WIDTH) + x] ? unit_selected : TRANSPARENT_COLOR);
 
-    phase_shift = primary_map ? atan2((cursor_pos.y - actual_player_pos[1]), (cursor_pos.x - actual_player_pos[0])) - 0.5 * FOV * two_pi // point at cursor
+    phase_shift = primary_map ? atan2((cursor_pos.y - actual_player_pos[1]), (cursor_pos.x - actual_player_pos[0])) // point at cursor
                               : (two_pi * cursor_pos.x * sensitivity / (GetHead(window)->size.width));
 
     // the cool thing is that this could be handled anywhere
@@ -125,8 +125,8 @@ void RenderMap(struct Window *window)
 
         // Very, very rudimentary and ugly collision system - it is what it is, I can cop a few fps
         // the trick is we test with each coordinate to see if the player is in a activated square - if so, then that coordinate in the x/y direction isn't set
-        relative_player_pos[0] = game_map[CEIL_INT(MAP_HEIGHT * relative_player_pos[1]) * MAP_WIDTH + FLOOR_INT(MAP_WIDTH * new_position[0])] ? relative_player_pos[0] : new_position[0];
-        relative_player_pos[1] = game_map[FLOOR_INT(MAP_HEIGHT * new_position[1]) * MAP_WIDTH + CEIL_INT(MAP_WIDTH * relative_player_pos[0])] ? relative_player_pos[1] : new_position[1];
+        relative_player_pos[0] = game_map[FLOOR_INT(MAP_HEIGHT * relative_player_pos[1]) * MAP_WIDTH + FLOOR_INT(MAP_WIDTH * new_position[0])] ? relative_player_pos[0] : new_position[0];
+        relative_player_pos[1] = game_map[FLOOR_INT(MAP_HEIGHT * new_position[1]) * MAP_WIDTH + FLOOR_INT(MAP_WIDTH * relative_player_pos[0])] ? relative_player_pos[1] : new_position[1];
     }
 }
 
