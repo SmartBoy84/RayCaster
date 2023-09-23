@@ -50,16 +50,26 @@ void G_HotKey(struct Window *window)
 
 void C_HotKey(struct Window *window)
 {
-    for (int i = 0; i < MAP_WIDTH * MAP_HEIGHT; i++)
-    {
-        printf("%d, ", game_map[i]);
-    }
     memset(game_map, 0, MAP_WIDTH * MAP_HEIGHT);
 }
 
 void F_HotKey(struct Window *window)
 {
     fps_show = !fps_show;
+}
+
+void R_HotKey(struct Window *window)
+{
+    if (!(window->nextWindow->state & CLOSED))
+    {
+        PauseLoop(window->nextWindow);
+        HideCanvas(window->nextWindow);
+    }
+    else
+    {
+        StartLoop(window->nextWindow);
+        ShowCanvas(window->nextWindow);
+    }
 }
 
 void MouseWheel(struct Window *window, LPARAM lParam, WPARAM wParam)
@@ -93,6 +103,7 @@ void PrimarySetup(struct Window *window)
     AddHotkey(window, &ToggleScreen, 0, 'M'); // change mode (flip minimap)
     AddHotkey(window, &C_HotKey, 0, 'C');     // clear the map
     AddHotkey(window, &F_HotKey, 0, 'F');     // hide/show fps
+    AddHotkey(window, &R_HotKey, 0, 'R');     // hide/show secondary screen
 
     MakeTopmost(window, TRUE);
 
@@ -109,6 +120,8 @@ void PrimarySetup(struct Window *window)
 
 void PrimaryUpdate(struct Window *window)
 {
+    cursor_pos = GetRelativeCursorPos(window); // we want the cursor position in main frame
+
     if (primary_map)
         RenderMap(window);
     else
