@@ -6,10 +6,20 @@
 #include "helpers.h"
 #include "math.h"
 
-#define WIDTH 100
-#define HEIGHT 100
-#define UNIT_SIZE 10
+// Primary dimensions
+#define SCREEN_WIDTH 1200
+#define SCREEN_HEIGHT 750
+
+#define MAP_WIDTH 20 // Map size
+#define MAP_HEIGHT 20
+#define UNIT_SIZE 50
+
+#define SECONDARY_SCALAR 0.2 // Percentage of the primary screen dimensions
 #define FRAMERATE 120
+
+extern BOOL primary_map;
+extern BOOL grid;
+extern uint8_t *map;
 
 void PrimarySetup(struct Window *window);
 void PrimaryUpdate(struct Window *window);
@@ -17,5 +27,8 @@ void ClosedRoutine(struct Window *window);
 
 void SecondarySetup(struct Window *window);
 void SecondaryUpdate(struct Window *window);
+
+void RenderGame(struct Window *window);
+void RenderMap(struct Window *window);
 
 #endif

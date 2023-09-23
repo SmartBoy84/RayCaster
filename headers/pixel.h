@@ -4,26 +4,16 @@
 #include "display.h"
 #include "assert.h"
 
-typedef int Color[4];
+typedef const int Color[4];
 
-// I hate intellisense formatting
-#define TRANSPARENT_COLOR \
-    (Color) { 0, 0, 0, 0 }
-#define WHITE_COLOR \
-    (Color) { 255, 255, 255, 255 }
-#define BLACK_COLOR \
-    (Color) { 0, 0, 0, 255 }
-#define RGBA_TO_ARRAY(r, g, b, a) \
-    (Color) { (uint8_t)(r), (uint8_t)(g), (uint8_t)(b), (uint8_t)a }
-#define UINT32_TO_COLOR(colorValue)           \
-    (Color)                                   \
-    {                                         \
-        (int)((colorValue >> 24) & 0xFF),     \
-            (int)((colorValue >> 16) & 0xFF), \
-            (int)((colorValue >> 8) & 0xFF),  \
-            (int)(colorValue & 0xFF)          \
-    }
-#define EXTRACT_COLOR(arr) ((arr[0] << 16) | (arr[1] << 8) | (arr[2]))
+#define TRANSPARENT_COLOR ((Color){0, 0, 0, 0})
+#define WHITE_COLOR ((Color){255, 255, 255, 255})
+#define BLACK_COLOR ((Color){0, 0, 0, 255})
+#define RGBA_TO_COLOR(r, g, b, a) ((Color){r, g, b, a})
+#define COLOR_TO_UINT32(color) (((uint32_t)(color[0]) << 16) | ((uint32_t)(color[1]) << 8) | (uint32_t)(color[2]))
+#define IS_TRANSPARENT(color) (color[3] == 0)
+
+
 #define GET_INDEX(window, x, y)                                                                    \
     ({                                                                                             \
         assert((x) >= 0 && (x) < (window)->size.width && (y) >= 0 && (y) < (window)->size.height); \

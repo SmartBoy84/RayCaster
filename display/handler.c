@@ -103,10 +103,6 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
         break;
 
     case WM_ENTERSIZEMOVE:
-        if (window->runners.windowModalLoop)
-            window->runners.windowModalLoop(window, lParam, wParam);
-        break;
-
     case WM_EXITSIZEMOVE:
         if (window->runners.windowModalLoop)
             window->runners.windowModalLoop(window, lParam, wParam);

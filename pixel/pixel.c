@@ -6,10 +6,10 @@ uint32_t getOverlayColor(struct Window *window, int index, Color newColor)
     uint32_t color = window->pixels[index];
 
     if (newColor[3] == 255)
-        return EXTRACT_COLOR(newColor);
+        return COLOR_TO_UINT32(newColor);
 
     else if (newColor[3] == 0)
-        return color;
+        return COLOR_TO_UINT32(newColor);
 
     float scalar = (float)newColor[3] / 255.0;
 
@@ -24,9 +24,8 @@ uint32_t getOverlayColor(struct Window *window, int index, Color newColor)
 
 void SetScreen(struct Window *window, Color color)
 {
-    uint32_t rawColor = EXTRACT_COLOR(color);
     for (int i = 0; i < GET_INDEX(window, window->size.width - 1, window->size.height - 1); i++)
-        window->pixels[i] = rawColor;
+        window->pixels[i] = COLOR_TO_UINT32(color);
 }
 
 void ChangePixel(struct Window *window, int posX, int posY, Color color)
@@ -40,9 +39,12 @@ void ChangePixel(struct Window *window, int posX, int posY, Color color)
 
 void DrawRect(struct Window *window, int posX, int posY, int width, int height, Color fillColor)
 {
-    for (int y = posY; y < posY + height; y++)
-        for (int x = posX; x < posX + width; x++)
-            ChangePixel(window, x, y, fillColor);
+    if (!IS_TRANSPARENT(fillColor))
+    {
+        for (int y = posY; y < posY + height; y++)
+            for (int x = posX; x < posX + width; x++)
+                ChangePixel(window, x, y, fillColor);
+    }
 }
 
 int DrawLetter(struct Window *window, char character, int posX, int posY, int scalarPx, Color textColor, Color backColor)

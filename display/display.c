@@ -1,5 +1,6 @@
 #include "display.h"
 #include "synchapi.h"
+#include "helpers.h"
 
 UINT ret;
 
@@ -148,12 +149,6 @@ struct Window *CreateCanvas(int width, int height, int style, char *title, int f
         window->prevWindow->nextWindow = window; // pop on to linked list so that event loop starts running this as well
     }
 
-    // center the screen
-    window->position = (POINT){
-        .x = (GetSystemMetrics(SM_CXSCREEN) - window->size.width) / 2,
-        .y = (GetSystemMetrics(SM_CYSCREEN) - window->size.height) / 2,
-    };
-
     window->windowHandler = CreateWindowA(window->windowClass->lpszClassName,
                                           window->title,                            // set title
                                           window->style | WS_VISIBLE,               // set styling
@@ -170,6 +165,8 @@ struct Window *CreateCanvas(int width, int height, int style, char *title, int f
     window->windowDC = GetDC(window->windowHandler);
     UpdateBuffer(window, window->size.width, window->size.height);
     SetWindowLongPtr(window->windowHandler, GWLP_USERDATA, (LONG_PTR)window); // add our window data so we can access it in WinProc
+
+    MakeCenter(window); // start in the center then the user can do whatever they want in initialiser routines
 
     window->runners.canvasInitialised(window);
 

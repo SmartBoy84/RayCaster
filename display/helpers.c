@@ -36,6 +36,11 @@ int MakeTopmost(struct Window *window, BOOL state)
     return SetWindowPos(window->windowHandler, state ? HWND_TOPMOST : HWND_TOP, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE);
 }
 
+int MakeCenter(struct Window *window)
+{
+    return MoveCanvas(window, (GetSystemMetrics(SM_CXSCREEN) - window->size.width) / 2, (GetSystemMetrics(SM_CYSCREEN) - window->size.height) / 2);
+}
+
 int ChangeDimensions(struct Window *window, int width, int height)
 {
     if (SetWindowPos(window->windowHandler, 0, 0, 0, width, height, SWP_NOMOVE | SWP_NOOWNERZORDER | SWP_NOZORDER))
@@ -81,7 +86,7 @@ int AddHotkey(struct Window *window, void *callback, UINT fsModifiers, UINT vk)
 
     if (!RegisterHotKey(window->windowHandler, number, fsModifiers, vk))
     {
-        LogMessage("Failed to register hotkey");
+        printf("Failed to register hotkey: %x", vk);
         return 0;
     }
 
@@ -127,10 +132,8 @@ POINT GetRelativeCursorPos(struct Window *window)
         LogMessage("Failed to make point relative");
 
     // It happens
-    cursor.x = cursor.x < 0 ? 0 : cursor.x >= window->size.width ? window->size.width - 1
-                                                                 : cursor.x;
-    cursor.y = cursor.y < 0 ? 0 : cursor.y >= window->size.height ? window->size.height - 1
-                                                                  : cursor.y;
+    cursor.x = cursor.x < 0 || cursor.x >= window->size.width ? -1 : cursor.x;
+    cursor.y = cursor.y < 0 || cursor.y >= window->size.height ? -1 : cursor.y;
 
     return cursor;
 }
