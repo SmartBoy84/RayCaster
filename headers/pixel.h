@@ -13,12 +13,15 @@ typedef const int Color[4];
 #define COLOR_TO_UINT32(color) (((uint32_t)(color[0]) << 16) | ((uint32_t)(color[1]) << 8) | (uint32_t)(color[2]))
 #define IS_TRANSPARENT(color) (color[3] == 0)
 
-
 #define GET_INDEX(window, x, y)                                                                    \
     ({                                                                                             \
         assert((x) >= 0 && (x) < (window)->size.width && (y) >= 0 && (y) < (window)->size.height); \
         ((y) * (window)->size.width + (x));                                                        \
     })
+
+// this is for the line api callback - since the callback function doesn't know what the gradient of the line is
+#define CURRENT 0x01
+#define PREVIOUS 0x10
 
 // Pixel buffer handlers
 void SetScreen(struct Window *window, Color color);
@@ -26,10 +29,12 @@ void ChangePixel(struct Window *window, int x, int y, Color color);
 
 // Shape API
 void DrawRect(struct Window *window, int posX, int posY, int width, int height, Color fillColor);
-void DrawLine(struct Window *window, int x1, int y1, int x2, int y2, int strokeWidth, Color color);
+POINT DrawLine(struct Window *window, int x0, int y0, int x1, int y1, int strokeWidth, Color color, int (*callbackFn)(int currentX, int currentY, int previousX, int previousY));
 
 // text
 void DrawString(struct Window *window, char *string, int posX, int posY, int scalarPx, int characterWarp, Color textColor, Color backColor);
 int DrawLetter(struct Window *window, char character, int posX, int posY, int scalarPx, Color textColor, Color backColor);
+
+void DrawBoundaries(struct Window *window, int strokeWidth, Color fillColor);
 
 #endif

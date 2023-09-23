@@ -1,7 +1,7 @@
 #include "game.h"
 
 clock_t startTime;
-char fps[256]; // Change fps to a fixed-size array
+char fps[256];
 
 void FPS()
 {
@@ -50,6 +50,8 @@ void M_HotKey(struct Window *window)
         ChangeDimensions(window->nextWindow, MAP_WIDTH * UNIT_SIZE * SECONDARY_SCALAR, MAP_HEIGHT * UNIT_SIZE * SECONDARY_SCALAR);
     }
 
+    unit_size = (primary_map ? window->size.width : window->nextWindow->size.width) / MAP_WIDTH;
+
     MakeCenter(window); // center the primary window on screen
     CornerSecondary(window);
 }
@@ -89,4 +91,6 @@ void PrimaryUpdate(struct Window *window)
 
     FPS();
     DrawString(window, fps, 10, 10, 2, 0, WHITE_COLOR, RGBA_TO_COLOR(208, 219, 53, 200));
+
+    DrawBoundaries(window, 1, WHITE_COLOR);
 }

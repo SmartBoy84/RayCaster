@@ -25,7 +25,6 @@ void SecondarySetup(struct Window *window)
     printf("Hello from secondary screen!\n");
 
     AddHotkey(window, S_HotKey, 0, 'S');
-
     window->runners.canvasDestroyed = &SecondaryDestroyed;
 }
 
@@ -37,4 +36,6 @@ void SecondaryUpdate(struct Window *window)
         RenderGame(window);
     else
         RenderMap(window);
+
+    DrawBoundaries(window, 1, WHITE_COLOR);
 }

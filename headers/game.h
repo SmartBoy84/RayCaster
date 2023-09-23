@@ -20,6 +20,7 @@
 extern BOOL primary_map;
 extern BOOL grid;
 extern uint8_t *map;
+extern int unit_size;
 
 void PrimarySetup(struct Window *window);
 void PrimaryUpdate(struct Window *window);

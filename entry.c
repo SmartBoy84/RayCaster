@@ -3,10 +3,6 @@
 #include <time.h>
 #include "game.h"
 
-BOOL grid = TRUE;
-BOOL primary_map = FALSE;
-uint8_t *map;
-
 int main()
 {
     map = calloc(MAP_WIDTH * MAP_HEIGHT, sizeof(uint8_t));

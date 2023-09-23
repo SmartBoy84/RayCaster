@@ -1,28 +1,35 @@
 #include "game.h"
 
-const Color grid_color = RGBA_TO_COLOR(255, 255, 255, 255);
-const Color unit_selected = RGBA_TO_COLOR(255, 255, 255, 255);
+const Color grid_color = WHITE_COLOR;
+const Color map_background = BLACK_COLOR;
+const Color unit_selected = WHITE_COLOR;
 const Color unit_hover = RGBA_TO_COLOR(255, 255, 255, 60);
+
+// Constant - don't change
+BOOL grid = TRUE;
+BOOL primary_map = FALSE;
+int unit_size;
+uint8_t *map;
+
+int Ray(int x0, int y0, int x1, int y1)
+{
+    printf("Run");
+    return map[(y1 * MAP_WIDTH / unit_size) + x1] ? PREVIOUS : 0;
+}
 
 void RenderMap(struct Window *window)
 {
-    SetScreen(window, BLACK_COLOR); // clear the screen
+    SetScreen(window, map_background); // clear the screen
+    POINT cursor = GetRelativeCursorPos(window);
 
-    int unit_size = window->size.width / MAP_WIDTH;
-
+    // Draw boundaries
     if (grid)
     {
         for (int x = 0; x <= MAP_WIDTH; x++)
-            DrawLine(window, x * unit_size, 0, x * unit_size, window->size.height, 1, grid_color);
+            DrawLine(window, x * unit_size, 0, x * unit_size, window->size.height, 1, grid_color, NULL);
 
         for (int y = 0; y <= MAP_HEIGHT; y++)
-            DrawLine(window, 0, y * unit_size, window->size.width, y * unit_size, 1, grid_color);
-
-        // it was annoying the hell out of me
-        DrawLine(window, 0, window->size.height - 1, window->size.width, window->size.height - 1, 1, grid_color);
-        DrawLine(window, window->size.width - 1, 0, window->size.width - 1, window->size.height, 1, grid_color);
-
-        POINT cursor = GetRelativeCursorPos(window);
+            DrawLine(window, 0, y * unit_size, window->size.width, y * unit_size, 1, grid_color, NULL);
 
         POINT coord = (POINT){.x = (int)floor((float)cursor.x / unit_size), .y = (int)floor((float)cursor.y / unit_size)};
         if (coord.x >= 0 && coord.y >= 0)
@@ -32,6 +39,9 @@ void RenderMap(struct Window *window)
             DrawRect(window, coord.x * unit_size + 1, coord.y * unit_size + 1, unit_size - 1, unit_size - 1, unit_hover);
         }
     }
+
+    // POINT finalPoint = DrawLine(window, cursor.x, cursor.y, window->size.width, 0, 1, WHITE_COLOR, Ray);
+    // printf("Final point: (%d, %d)\n", finalPoint.x, finalPoint.y);
 
     for (int y = 0; y < MAP_HEIGHT; y++)
         for (int x = 0; x < MAP_WIDTH; x++)
