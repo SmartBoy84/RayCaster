@@ -21,9 +21,12 @@ typedef int Color[4];
     })
 
 #define FLOOR_INT(value) ((int)floor((value)))
+#define CEIL_INT(value) ((int)ceil((value)))
 
 #define CLAMP(value, min_val, max_val) \
     ((value) < (min_val) ? (min_val) : ((value) > (max_val) ? (max_val) : (value)))
+
+#define DISTANCE(x1, y1, x2, y2) (sqrt(pow((x2 - x1), 2) + pow((y2 - y1), 2)))
 
 // this is for the line api callback - since the callback function doesn't know what the gradient of the line is
 #define CURRENT 0x01

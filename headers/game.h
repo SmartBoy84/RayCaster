@@ -6,6 +6,17 @@
 #include "helpers.h"
 #include "math.h"
 
+// first bit indicates a collision has occured
+#define LEFT_RIGHT 0x11
+#define TOP_BOTTOM 0x10
+
+struct raylission
+{
+    int side;
+    POINT point;
+};
+
+
 // Primary dimensions
 #define SCREEN_WIDTH 1200
 #define SCREEN_HEIGHT 750
@@ -39,6 +50,7 @@ extern BOOL secondary_show;
 extern BOOL primary_map;
 extern BOOL grid;
 extern uint8_t *game_map;
+extern struct raylission *ray_collisions;
 
 extern int unit_size;
 extern int cross_length;
@@ -50,5 +62,6 @@ extern int lines;
 extern int mouse_wheel;
 extern int max_lines;
 extern POINT cursor_pos;
+extern int ray_count;
 
 #endif

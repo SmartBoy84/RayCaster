@@ -72,6 +72,14 @@ void R_HotKey(struct Window *window)
     }
 }
 
+void configure_collisions()
+{
+    if (ray_collisions)
+        free(ray_collisions);
+    ray_count = (int)ceil((float)lines * FOV);
+    ray_collisions = calloc(ray_count, sizeof(struct raylission));
+}
+
 void MouseWheel(struct Window *window, LPARAM lParam, WPARAM wParam)
 {
     if (primary_map)
@@ -85,6 +93,8 @@ void MouseWheel(struct Window *window, LPARAM lParam, WPARAM wParam)
         FOV = modf(FOV + (GET_WHEEL_DELTA_WPARAM(wParam) * mouse_wheel * 0.00005), NULL);
         FOV = FOV < 0 ? 0.0 : FOV; // novelty I can't be bothered adding right now
     }
+
+    configure_collisions();
 }
 
 void ClosedRoutine(struct Window *window)
@@ -115,6 +125,7 @@ void PrimarySetup(struct Window *window)
                                             FRAMERATE, &SecondaryUpdate,
                                             (struct Runners){.canvasInitialised = &SecondarySetup}, window);
     ToggleScreen(window);
+    configure_collisions();
     printf("Created secondary\n");
 }
 
