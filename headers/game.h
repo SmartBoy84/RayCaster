@@ -55,7 +55,7 @@ extern struct raylission *ray_collisions;
 extern int unit_size;
 extern int cross_length;
 extern float FOV;
-extern float phase_shift;
+extern float camera_angle;
 extern const float two_pi;
 extern const float pi;
 extern int lines;

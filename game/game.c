@@ -35,9 +35,9 @@ const float diagonal_speed = speed / 1.41421356237; // speed/sqrt(2) => to fix i
 float render_distance = 0.4;                        // percentage of ray of max length
 
 // Internal shizzle
-float phase_shift = 0;
 const float pi = 3.1415926535;
 const float two_pi = pi * 2;
+float camera_angle = 0; // aka, phase shift
 
 int unit_size;
 int cross_length;
@@ -52,13 +52,14 @@ int RayCallback(int x0, int y0, int x1, int y1)
     int old_index = GET_MAP_INDEX(x0, y0, unit_size);
     int new_index = GET_MAP_INDEX(x1, y1, unit_size);
 
-    // if (game_map[new_index]) // ensure player isn't inside wall
-    // {
-    //     ray_collisions[collision_counter] = (struct raylission){
-    //         .point = (POINT){.x = x0, .y = y0},
-    //         .side = abs(y0 - y1) > abs(x0 - x1) ? TOP_BOTTOM : LEFT_RIGHT};
-    //     collision_counter++;
-    // }
+    if (game_map[new_index]) // ensure player isn't inside wall
+    {
+        // printf("%d, %d (%d, %d)\n", collision_counter, ray_count, x0, y0);
+        ray_collisions[collision_counter] = (struct raylission){
+            .point = (POINT){.x = x0, .y = y0},
+            .side = abs(y0 - y1) > abs(x0 - x1) ? TOP_BOTTOM : LEFT_RIGHT};
+        collision_counter++;
+    }
 
     // edge case must be handled because, by nature, the bresenham line algorithm can jump across this gap and seep through two squares
     return (
@@ -105,15 +106,15 @@ void RenderMap(struct Window *window)
         }
     }
 
-    for (float i = phase_shift - pi * FOV; i <= phase_shift + pi * FOV; i += two_pi / lines)
+    for (float i = camera_angle - pi * FOV; i <= camera_angle + pi * FOV; i += two_pi / lines)
         DrawLine(window, actual_player_pos[0], actual_player_pos[1], actual_player_pos[0] + render_distance * cos(i) * cross_length, actual_player_pos[1] + render_distance * sin(i) * cross_length, 1, grid ? TRANSPARENT_COLOR : ray_color, RayCallback);
 
     for (int y = 0; y < MAP_HEIGHT; y++)
         for (int x = 0; x < MAP_WIDTH; x++)
             DrawRect(window, x * unit_size, y * unit_size, unit_size, unit_size, game_map[(y * MAP_WIDTH) + x] ? unit_selected : TRANSPARENT_COLOR);
 
-    phase_shift = primary_map ? atan2((cursor_pos.y - actual_player_pos[1]), (cursor_pos.x - actual_player_pos[0])) // point at cursor
-                              : (two_pi * cursor_pos.x * sensitivity / (GetHead(window)->size.width));
+    camera_angle = primary_map ? atan2((cursor_pos.y - actual_player_pos[1]), (cursor_pos.x - actual_player_pos[0])) // point at cursor
+                               : (two_pi * cursor_pos.x * sensitivity / (GetHead(window)->size.width));
 
     // the cool thing is that this could be handled anywhere
     if (GET_KEY_STATE('W')) // too lazy, this just moves in the forwards direction (relative to camera angle)
@@ -121,7 +122,7 @@ void RenderMap(struct Window *window)
         if (primary_map && DISTANCE(cursor_pos.x, cursor_pos.y, actual_player_pos[0], actual_player_pos[1]) <= unit_size)
             return;
 
-        float new_position[2] = {relative_player_pos[0] + speed * cos(phase_shift), relative_player_pos[1] + speed * sin(phase_shift)};
+        float new_position[2] = {relative_player_pos[0] + speed * cos(camera_angle), relative_player_pos[1] + speed * sin(camera_angle)};
 
         // Very, very rudimentary and ugly collision system - it is what it is, I can cop a few fps
         // the trick is we test with each coordinate to see if the player is in a activated square - if so, then that coordinate in the x/y direction isn't set
@@ -141,6 +142,9 @@ void RenderGame(struct Window *window)
         if (ray_collisions[i].side)
         {
             height = FLOOR_INT(window->size.height / sqrt(pow(ray_collisions[i].point.x - actual_player_pos[0], 2) + pow(ray_collisions[i].point.y - actual_player_pos[1], 2)));
+            height *= cos(atan2(actual_player_pos[1] - ray_collisions[i].point.y, actual_player_pos[0] - ray_collisions[i].point.x) - camera_angle);
+            // distance = distance * Math.cos(degreeToRadians(rayAngle - data.player.angle));
+
             DrawRect(window, width * i, (window->size.height - height) / 2, width, height, ray_collisions[i].side == LEFT_RIGHT ? wall_side_color : wall_front_color);
         }
     }
