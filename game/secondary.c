@@ -38,4 +38,5 @@ void SecondaryUpdate(struct Window *window)
         RenderMap(window);
 
     DrawBoundaries(window, 1, WHITE_COLOR);
+    DrawString(window, "Minimap", 0, 0, 1, 0, WHITE_COLOR, TRANSPARENT_COLOR);
 }

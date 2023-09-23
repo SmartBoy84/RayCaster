@@ -85,7 +85,7 @@ int UpdateBuffer(struct Window *window, int newWidth, int newHeight)
 
 struct Window *CreateCanvas(int width, int height, int style, char *title, int frameRate, Updater updateLoop, struct Runners runners, struct Window *windowList)
 {
-    if (windowList && !(GetHead(windowList)->state & BIRTHED))
+    if (windowList && !(GetHead(windowList)->state & EXISTS))
     {
         LogMessage("Malformed linked list provided");
         return NULL;
@@ -95,7 +95,7 @@ struct Window *CreateCanvas(int width, int height, int style, char *title, int f
     HINSTANCE moduleHandle = GetModuleHandle(NULL);
 
     // fill  up the window struct
-    window->state |= (PAUSED | BIRTHED);
+    window->state |= (EXISTS | PAUSED); // this is the only point where the EXISTS mark will ever be set
     window->title = title;
 
     window->frameRate = frameRate; // milliseconds - time that should elapse in between frames
@@ -169,6 +169,7 @@ struct Window *CreateCanvas(int width, int height, int style, char *title, int f
     MakeCenter(window); // start in the center then the user can do whatever they want in initialiser routines
 
     window->runners.canvasInitialised(window);
+    window->state |= BIRTHED; // this is the only point where this will be set
 
     if (StartLoop(window))
     {

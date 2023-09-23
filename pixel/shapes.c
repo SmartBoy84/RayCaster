@@ -33,25 +33,28 @@ POINT DrawLine(struct Window *window, int x0, int y0, int x1, int y1, int stroke
     int sy = y0 < y1 ? 1 : -1;
     int error = dx + dy;
 
-    int x2 = 0;
-    int y2 = 0;
+    int x2 = x0;
+    int y2 = x0;
+
     int ret = 0;
 
     while (1)
     {
-        int x2 = x0;
-        int y2 = y0;
-
-        ret = callbackFn(x0, y0, x2, y2);
-
-        if (x1 >= window->size.width || y1 >= window->size.height)
+        if (x0 >= window->size.width || y0 >= window->size.height || x0 < 0 || y0 < 0)
+        {
+            // printf("Reached edge");
             return (POINT){.x = x2, .y = y2};
-
-        if (ret)
-        { // stop if condition met
-            return ret == PREVIOUS ? (POINT){.x = x2, .y = y2} : (POINT){.x = x0, .y = y0};
-            printf("Told to stop");
         }
+
+        if ((ret = callbackFn(x0, y0, x2, y2)))
+        { // stop if condition met
+            printf("Told to stop");
+            return ret == PREVIOUS ? (POINT){.x = x2, .y = y2} : (POINT){.x = x0, .y = y0};
+        }
+
+        x2 = x0;
+        y2 = y0;
+        
         DrawRect(window, x0, y0, strokeWidth, strokeWidth, color);
         if (x0 == x1 && y0 == y1)
             break;

@@ -56,7 +56,7 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
 {
     struct Window *window = (struct Window *)GetWindowLongPtr(hwnd, GWLP_USERDATA); // retrieve pointer to our window struct from the window's memory
 
-    if (!window || !window->state || !(window->state & BIRTHED)) // ensure that the necessary memory has been allocated
+    if (!window || !window->state || !(window->state & EXISTS)) // ensure that the necessary memory has been allocated
     {
         if (msg == WM_PAINT) // by this point, we really should have access to the window buffer...
             printf("Failed to find window data - not yet initialised?");

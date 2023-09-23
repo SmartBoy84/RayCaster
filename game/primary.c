@@ -13,9 +13,26 @@ void FPS()
     prevTime = currentTime;
 }
 
-void CornerSecondary(struct Window *window)
+void ToggleScreen(struct Window *window)
 {
+    if (window->state & BIRTHED) // only flip if initialiser routine has run (i.e., this is NOT the first time this is run)
+        primary_map = !primary_map;
+
+    if (primary_map)
+    {
+        ChangeDimensions(window, MAP_WIDTH * UNIT_SIZE, MAP_HEIGHT * UNIT_SIZE);
+        ChangeDimensions(window->nextWindow, SCREEN_WIDTH * SECONDARY_SCALAR, SCREEN_HEIGHT * SECONDARY_SCALAR);
+    }
+    else
+    {
+        ChangeDimensions(window, SCREEN_WIDTH, SCREEN_HEIGHT);
+        ChangeDimensions(window->nextWindow, MAP_WIDTH * UNIT_SIZE * SECONDARY_SCALAR, MAP_HEIGHT * UNIT_SIZE * SECONDARY_SCALAR);
+    }
+    MakeCenter(window); // center the primary window on screen
+
     MoveCanvas(window->nextWindow, window->position.x + window->size.width - window->nextWindow->size.width, window->position.y); // position in the top right corner
+
+    unit_size = (primary_map ? window->size.width : window->nextWindow->size.width) / MAP_WIDTH;
 }
 
 void Q_HotKey(struct Window *window)
@@ -34,28 +51,6 @@ void C_HotKey(struct Window *window)
     memset(map, 0, MAP_WIDTH * MAP_HEIGHT);
 }
 
-void M_HotKey(struct Window *window)
-{
-    primary_map = !primary_map;
-
-    // first position the primary window
-    if (primary_map)
-    {
-        ChangeDimensions(window, MAP_WIDTH * UNIT_SIZE, MAP_HEIGHT * UNIT_SIZE);
-        ChangeDimensions(window->nextWindow, SCREEN_WIDTH * SECONDARY_SCALAR, SCREEN_HEIGHT * SECONDARY_SCALAR);
-    }
-    else
-    {
-        ChangeDimensions(window, SCREEN_WIDTH, SCREEN_HEIGHT);
-        ChangeDimensions(window->nextWindow, MAP_WIDTH * UNIT_SIZE * SECONDARY_SCALAR, MAP_HEIGHT * UNIT_SIZE * SECONDARY_SCALAR);
-    }
-
-    unit_size = (primary_map ? window->size.width : window->nextWindow->size.width) / MAP_WIDTH;
-
-    MakeCenter(window); // center the primary window on screen
-    CornerSecondary(window);
-}
-
 void PrimarySetup(struct Window *window)
 {
     printf("Started primary!\n");
@@ -63,16 +58,16 @@ void PrimarySetup(struct Window *window)
     startTime = clock(); // Initialize startTime when the program starts
     AddHotkey(window, &Q_HotKey, 0, 'Q');
     AddHotkey(window, &G_HotKey, 0, 'G');
-    AddHotkey(window, &M_HotKey, 0, 'M');
+    AddHotkey(window, &ToggleScreen, 0, 'M');
     AddHotkey(window, &C_HotKey, 0, 'C');
 
     MakeTopmost(window, TRUE);
 
     // create secondary canvas
-    struct Window *secondary = CreateCanvas(MAP_WIDTH * UNIT_SIZE * SECONDARY_SCALAR, MAP_HEIGHT * UNIT_SIZE * SECONDARY_SCALAR, BASIC_CANVAS, "secondary window",
+    struct Window *secondary = CreateCanvas(1, 1, BASIC_CANVAS, "secondary window",
                                             FRAMERATE, &SecondaryUpdate,
                                             (struct Runners){.canvasInitialised = &SecondarySetup}, window);
-    CornerSecondary(window);
+    ToggleScreen(window);
     printf("Created secondary\n");
 }
 

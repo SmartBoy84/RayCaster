@@ -12,13 +12,18 @@
 
 #define MAP_WIDTH 20 // Map size
 #define MAP_HEIGHT 20
-#define UNIT_SIZE 50
+#define UNIT_SIZE 20
 
 #define SECONDARY_SCALAR 0.2 // Percentage of the primary screen dimensions
 #define FRAMERATE 120
 
+#define GET_MAP_INDEX(x, y, unit_size) \
+    ((int)floor((y) / (unit_size)) * (MAP_WIDTH) + (int)floor((x) / (unit_size)))
+
+
 extern BOOL primary_map;
 extern BOOL grid;
+
 extern uint8_t *map;
 extern int unit_size;
 

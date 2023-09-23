@@ -28,10 +28,11 @@ struct Window;
 // Constants
 
 // window states
-#define BIRTHED 0x1000 // existence checkmark
-#define PAUSED 0x0100  // window's event loop is paused
-#define CLOSED 0x0010  // window is closed
-#define KILLED 0x0001  // window is dead, pending deletion
+#define EXISTS 0x10000  // existence checkmark
+#define BIRTHED 0x01000 // birthed (initialiser routine run)
+#define PAUSED 0x00100  // window's event loop is paused
+#define CLOSED 0x00010  // window is closed
+#define KILLED 0x00001  // window is dead, pending deletion
 
 // type definitions
 typedef void (*Handler)(struct Window *window, LPARAM lParam, WPARAM hParam); // custom message handler
