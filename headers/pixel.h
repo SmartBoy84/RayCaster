@@ -1,10 +1,11 @@
 #ifndef PIXEL_H
 #define PIXEL_H
 
+#include <assert.h>
+#include <math.h>
 #include "display.h"
-#include "assert.h"
 
-typedef const int Color[4];
+typedef int Color[4];
 
 #define TRANSPARENT_COLOR ((Color){0, 0, 0, 0})
 #define WHITE_COLOR ((Color){255, 255, 255, 255})
@@ -19,6 +20,11 @@ typedef const int Color[4];
         ((y) * (window)->size.width + (x));                                                        \
     })
 
+#define FLOOR_INT(value) ((int)floor((value)))
+
+#define CLAMP(value, min_val, max_val) \
+    ((value) < (min_val) ? (min_val) : ((value) > (max_val) ? (max_val) : (value)))
+
 // this is for the line api callback - since the callback function doesn't know what the gradient of the line is
 #define CURRENT 0x01
 #define PREVIOUS 0x10
@@ -29,7 +35,7 @@ void ChangePixel(struct Window *window, int x, int y, Color color);
 
 // Shape API
 void DrawRect(struct Window *window, int posX, int posY, int width, int height, Color fillColor);
-POINT DrawLine(struct Window *window, int x0, int y0, int x1, int y1, int strokeWidth, Color color, int (*callbackFn)(int currentX, int currentY, int previousX, int previousY));
+POINT DrawLine(struct Window *window, int x0, int y0, int x1, int y1, int strokeWidth, Color color, int (*callbackFn)(int, int, int, int));
 
 // text
 void DrawString(struct Window *window, char *string, int posX, int posY, int scalarPx, int characterWarp, Color textColor, Color backColor);

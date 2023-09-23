@@ -11,8 +11,8 @@
 #define SCREEN_HEIGHT 750
 
 #define MAP_WIDTH 30 // Map size
-#define MAP_HEIGHT 20
-#define UNIT_SIZE 50
+#define MAP_HEIGHT 30
+#define UNIT_SIZE 30
 
 #define SECONDARY_SCALAR 0.2 // Percentage of the primary screen dimensions
 #define FRAMERATE 120
@@ -20,11 +20,7 @@
 #define GET_MAP_INDEX(x, y, unit_size) \
     ((int)floor((y) / (unit_size)) * (MAP_WIDTH) + (int)floor((x) / (unit_size)))
 
-#define CLAMP(value, min_val, max_val) \
-    ((value) < (min_val) ? (min_val) : ((value) > (max_val) ? (max_val) : (value)))
-
 #define GET_KEY_STATE(key) (GetAsyncKeyState(key) != 0)
-#define FLOOR_INT(value) ((int)floor((value)))
 
 // function definitions
 void PrimarySetup(struct Window *window);

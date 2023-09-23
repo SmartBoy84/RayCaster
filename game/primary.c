@@ -34,7 +34,7 @@ void ToggleScreen(struct Window *window)
 
     // set new parameters
     unit_size = (primary_map ? window->size.width : window->nextWindow->size.width) / MAP_WIDTH;
-    cross_length = (int)ceil(unit_size * MAP_WIDTH * unit_size * MAP_HEIGHT);
+    cross_length = FLOOR_INT(sqrt(pow(unit_size * MAP_WIDTH, 2) + pow(unit_size * MAP_HEIGHT, 2)));
 }
 
 void Q_HotKey(struct Window *window)

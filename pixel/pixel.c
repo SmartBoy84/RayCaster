@@ -54,7 +54,6 @@ int DrawLetter(struct Window *window, char character, int posX, int posY, int sc
         LogMessage("Character not supported!");
         return 1;
     }
-
     for (int y = 0; y < FONT_HEIGHT; y++)
         for (int x = 0; x < FONT_WIDTH; x++)
             DrawRect(window, posX + x * scalarPx, posY + y * scalarPx, scalarPx, scalarPx, (font[character][y] >> x) & 1 ? textColor : backColor);

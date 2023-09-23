@@ -8,7 +8,7 @@ void DrawBoundaries(struct Window *window, int strokeWidth, Color fillColor)
     DrawRect(window, window->size.width - strokeWidth, 0, strokeWidth, window->size.height, WHITE_COLOR);
 }
 
-POINT DrawLine(struct Window *window, int x0, int y0, int x1, int y1, int strokeWidth, Color color, int (*callbackFn)(int currentX, int currentY, int previousX, int previousY))
+POINT DrawLine(struct Window *window, int x0, int y0, int x1, int y1, int strokeWidth, Color color, int (*callbackFn)(int, int, int, int))
 {
     if (!strokeWidth)
         return (POINT){.x = x0, .y = y0};
@@ -34,7 +34,7 @@ POINT DrawLine(struct Window *window, int x0, int y0, int x1, int y1, int stroke
     int error = dx + dy;
 
     int x2 = x0;
-    int y2 = x0;
+    int y2 = y0;
 
     int ret = 0;
 
@@ -43,7 +43,7 @@ POINT DrawLine(struct Window *window, int x0, int y0, int x1, int y1, int stroke
         if (x0 >= window->size.width || y0 >= window->size.height || x0 < 0 || y0 < 0)
             return (POINT){.x = x2, .y = y2};
 
-        if ((ret = callbackFn(x0, y0, x2, y2))) // stop if condition met
+        if ((ret = callbackFn(x2, y2, x0, y0))) // stop if condition met
             return ret == PREVIOUS ? (POINT){.x = x2, .y = y2} : (POINT){.x = x0, .y = y0};
 
         x2 = x0;

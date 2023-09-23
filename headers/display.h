@@ -35,7 +35,7 @@ struct Window;
 #define KILLED 0x00001  // window is dead, pending deletion
 
 // type definitions
-typedef void (*Handler)(struct Window *window, LPARAM lParam, WPARAM wParam); // custom message handler
+typedef void (*Handler)(struct Window *, LPARAM, WPARAM); // custom message handler
 typedef void (*Updater)(struct Window *);
 
 // struct definitions
@@ -53,7 +53,7 @@ struct Runners
     Handler windowActivated;    // when the user focusses on window (tab-alt, mouse click etc)
     Handler windowChangePrelim; // run when the user wants to change (resize/move) the window - use can change MINMAXINFO struct to whatever
 
-    int (*windowResized)(struct Window *window, LPARAM lParam, WPARAM wParam); // window has been resized - return 1 to override default behaviour (i.e., mapping buffer to new size)
+    int (*windowResized)(struct Window *, LPARAM, WPARAM); // window has been resized - return 1 to override default behaviour (i.e., mapping buffer to new size)
 
     // input handlers
     Handler keyDown; // key pressed

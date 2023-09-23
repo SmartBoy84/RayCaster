@@ -1,6 +1,7 @@
 {
     "files.associations": {
         "game.h": "c",
-        "buffer.h": "c"
+        "buffer.h": "c",
+        "random": "c"
     }
 }
