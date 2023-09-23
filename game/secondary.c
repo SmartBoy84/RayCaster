@@ -17,7 +17,7 @@ void S_HotKey(struct Window *window)
 void SecondaryDestroyed(struct Window *window)
 {
     printf("Secondary destroyed\n");
-    free(map);
+    free(game_map);
 }
 
 void SecondarySetup(struct Window *window)
@@ -26,6 +26,12 @@ void SecondarySetup(struct Window *window)
 
     AddHotkey(window, S_HotKey, 0, 'S');
     window->runners.canvasDestroyed = &SecondaryDestroyed;
+
+    if (!secondary_show)
+    {
+        PauseLoop(window);
+        HideCanvas(window);
+    }
 }
 
 void SecondaryUpdate(struct Window *window)
@@ -38,5 +44,4 @@ void SecondaryUpdate(struct Window *window)
         RenderMap(window);
 
     DrawBoundaries(window, 1, WHITE_COLOR);
-    DrawString(window, "Minimap", 0, 0, 1, 0, WHITE_COLOR, TRANSPARENT_COLOR);
 }

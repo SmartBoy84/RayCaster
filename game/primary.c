@@ -32,7 +32,9 @@ void ToggleScreen(struct Window *window)
 
     MoveCanvas(window->nextWindow, window->position.x + window->size.width - window->nextWindow->size.width, window->position.y); // position in the top right corner
 
+    // set new parameters
     unit_size = (primary_map ? window->size.width : window->nextWindow->size.width) / MAP_WIDTH;
+    cross_length = (int)ceil(unit_size * MAP_WIDTH * unit_size * MAP_HEIGHT);
 }
 
 void Q_HotKey(struct Window *window)
@@ -48,20 +50,54 @@ void G_HotKey(struct Window *window)
 
 void C_HotKey(struct Window *window)
 {
-    memset(map, 0, MAP_WIDTH * MAP_HEIGHT);
+    for (int i = 0; i < MAP_WIDTH * MAP_HEIGHT; i++)
+    {
+        printf("%d, ", game_map[i]);
+    }
+    memset(game_map, 0, MAP_WIDTH * MAP_HEIGHT);
+}
+
+void F_HotKey(struct Window *window)
+{
+    fps_show = !fps_show;
+}
+
+void MouseWheel(struct Window *window, LPARAM lParam, WPARAM wParam)
+{
+    if (primary_map)
+    {
+        lines = (int)(lines + GET_WHEEL_DELTA_WPARAM(wParam) * mouse_wheel);
+        lines = lines < 0 ? 0 : lines > max_lines ? max_lines
+                                                  : lines;
+    }
+    else
+    {
+        FOV = modf(FOV + (GET_WHEEL_DELTA_WPARAM(wParam) * mouse_wheel * 0.00005), NULL);
+        FOV = FOV < 0 ? 0.0 : FOV; // novelty I can't be bothered adding right now
+    }
+}
+
+void ClosedRoutine(struct Window *window)
+{
+    printf("Closing secondary\n");
+    DestroyCanvas(window->nextWindow);
 }
 
 void PrimarySetup(struct Window *window)
 {
     printf("Started primary!\n");
 
-    startTime = clock(); // Initialize startTime when the program starts
-    AddHotkey(window, &Q_HotKey, 0, 'Q');
-    AddHotkey(window, &G_HotKey, 0, 'G');
-    AddHotkey(window, &ToggleScreen, 0, 'M');
-    AddHotkey(window, &C_HotKey, 0, 'C');
+    startTime = clock();                      // Initialize startTime when the program starts
+    AddHotkey(window, &Q_HotKey, 0, 'Q');     // quit application
+    AddHotkey(window, &G_HotKey, 0, 'G');     // hide/show grid
+    AddHotkey(window, &ToggleScreen, 0, 'M'); // change mode (flip minimap)
+    AddHotkey(window, &C_HotKey, 0, 'C');     // clear the map
+    AddHotkey(window, &F_HotKey, 0, 'F');     // hide/show fps
 
     MakeTopmost(window, TRUE);
+
+    window->runners.canvasDestroyed = &ClosedRoutine;
+    window->runners.mouseWheel = &MouseWheel;
 
     // create secondary canvas
     struct Window *secondary = CreateCanvas(1, 1, BASIC_CANVAS, "secondary window",
@@ -71,12 +107,6 @@ void PrimarySetup(struct Window *window)
     printf("Created secondary\n");
 }
 
-void ClosedRoutine(struct Window *window)
-{
-    printf("Closing secondary\n");
-    DestroyCanvas(window->nextWindow);
-}
-
 void PrimaryUpdate(struct Window *window)
 {
     if (primary_map)
@@ -84,8 +114,11 @@ void PrimaryUpdate(struct Window *window)
     else
         RenderGame(window);
 
-    FPS();
-    DrawString(window, fps, 10, 10, 2, 0, WHITE_COLOR, RGBA_TO_COLOR(208, 219, 53, 200));
+    if (fps_show)
+    {
+        FPS();
+        DrawString(window, fps, 10, 10, 2, 0, WHITE_COLOR, RGBA_TO_COLOR(208, 219, 53, 200));
+    }
 
     DrawBoundaries(window, 1, WHITE_COLOR);
 }

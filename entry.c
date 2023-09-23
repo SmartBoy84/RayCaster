@@ -5,11 +5,11 @@
 
 int main()
 {
-    map = calloc(MAP_WIDTH * MAP_HEIGHT, sizeof(uint8_t));
+    game_map = calloc(MAP_WIDTH * MAP_HEIGHT, sizeof(uint8_t));
 
     // begins the event loop and creates the primary "head" window
     KindlyBegin(CreateCanvas(1, 1,                           // window dimensions
                              BASIC_CANVAS, "primary window", // style and title
                              FRAMERATE, &PrimaryUpdate,      // frame rate and update routine
-                             (struct Runners){.canvasInitialised = &PrimarySetup, .canvasDestroyed = &ClosedRoutine}, NULL));
+                             (struct Runners){.canvasInitialised = &PrimarySetup}, NULL));
 }
